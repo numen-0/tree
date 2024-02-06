@@ -1,0 +1,93 @@
+#!/bin/bash
+
+BINARY="tree"
+SRC_FILES="tree.c"
+H_FILES="config.h"
+CC="gcc"
+FLAGS="-w"
+
+BOB_AUTORUN="F"
+
+RED="\033[0;31m"
+BLUE="\033[0;94m"
+CYAN="\033[0;96m"
+GREEN="\033[0;92m"
+RESET="\033[0m"
+
+BOB_OK="${GREEN}O"
+BOB_NOT_OK="${RED}X"
+
+function bob_recompile() {
+    if [ ! -f "$BINARY" ]; then
+        echo "T"
+        return
+    fi
+    for DEP_FILE in $SRC_FILES $H_FILES
+    do
+        if [ "$DEP_FILE" -nt "$BINARY" ]; then
+            echo "T"
+            return
+        fi
+    done
+}
+function bob_compile() {
+    echo -e "${GREEN}\$ $CC $FLAGS -o $BINARY $SRC_FILES$RESET"
+    time $CC $FLAGS -o $BINARY $SRC_FILES 
+    [ $? != 0 ] && \
+        echo "" && \
+        echo -e "${BLUE}[BOB]: bob couldn't handle the heat, bob is leaving . . .(⌐■_■)$RESET" && \
+        exit 1
+}
+function bob_run() {
+    echo -e "${BLUE}[BOB]: running...$RESET"
+    echo -e "${GREEN}\$ ./tree $*$RESET"
+    time "./$BINARY" "$@"
+    echo ""
+}
+function bob_install() {
+    echo -e "${BLUE}[BOB]: installing...$RESET"
+    echo -e "${BLUE}[BOB]: checking '$HOME/.local/bin' directory$RESET"
+    if [ -f "$HOME/.local/bin/$BINARY" ]; then
+        echo -e "${BLUE}[BOB]: '$BINARY' is already in '$HOME/.local/bin'$RESET"
+        while true; do
+            echo -n -e "${BLUE}[BOB]: do you want to remove '$HOME/.local/bin/$BINARY' and install?(y/Y/n/N) $RESET " 
+            read -r answ
+            case $answ in
+                 Y|y) 
+                    break
+                ;;
+                N|n) 
+                    echo -e "${BLUE}[BOB]: installation canceled$RESET"
+                    return
+                ;;
+            esac
+        done
+    fi
+    echo -e "${BLUE}[BOB]: moving the binary '$HOME/.local/bin/$BINARY'$RESET"
+    echo -e "${GREEN}\$ cp -v ./$BINARY $HOME/.local/bin $RESET"
+    cp -v "./$BINARY" "$HOME/.local/bin"
+    echo -e "${BLUE}[BOB]: all done, source your .bashrc or close and open antother terminal (⌐■_■)b$RESET"
+}
+
+# Program ##########################################################################################
+
+echo -e "${BLUE}[BOB]: bob has entered the room (⌐■_■)"
+
+if [ -z "$(bob_recompile)" ]; then
+    echo -e "[BOB]: no need to cook"
+else
+    echo -e "[BOB]: bob is cooking"
+    bob_compile
+fi
+
+if [ -n "$1" ]; then
+    case "$1" in
+        -b-compile) bob_compile;;
+        -b-install) bob_install;;
+        *) bob_run "$@";;
+    esac
+else
+    [ "$BOB_AUTORUN" == "T" ] && bob_run "$@"
+fi
+echo -e "${BLUE}[BOB]: leaves (⌐■_■)$RESET"
+
